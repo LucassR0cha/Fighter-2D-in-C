@@ -1,0 +1,129 @@
+#include "raylib.h"
+#include "raymath.h"
+#include <stddef.h>
+#include <stdlib.h>
+
+const int larguraTela = 800;
+const int alturaTela = 400;
+
+const int velocidadeCavaleiro = 4.5;
+const int gravidade = 1;
+const int posicaoCoordenadaY = (2 * larguraTela) / 9;
+
+const int puloFrameSuperior = 3;
+const int puloFrameInferior = 4;
+const int passoFrame1 = 1;
+const int passoFrame2 = 4;
+
+bool cavaleiroNoChao(Texture2D *cavaleiro, Vector2 *posicaoCavaleiro) {
+    if (posicaoCavaleiro->y + cavaleiro->height >= posicaoCoordenadaY) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool imagemValida(const Texture2D *img) {
+    return img->id > 0;
+}
+
+void mostrarErroESair(const char *msgErro) {
+    while (!WindowShouldClose()) {
+        BeginDrawing();
+            ClearBackground(RAYWHITE);
+            DrawText(msgErro, 20, 20, 20, BLACK);
+        EndDrawing();
+    }
+    exit(EXIT_FAILURE);
+}
+
+void erroCarregarArquivo(const char *arquivo) {
+    mostrarErroESair(TextFormat("ERRO: NÃO FOI POSSÍVEL CARREGAR O ARQUIVO %s.", arquivo));
+}
+
+void finalizar() {
+    CloseWindow();
+}
+
+int main() {
+    InitWindow(larguraTela, alturaTela, "Teste Personagem 2D");
+    SetTargetFPS(60);
+    atexit(finalizar);
+
+    const char *arquivo = "imagens/andando.png";
+    Texture2D cavaleiro = LoadTexture(arquivo);
+
+    if (!imagemValida(&cavaleiro)) {
+        erroCarregarArquivo(arquivo);
+    }
+
+    unsigned qtdFramesDaImagem = 10;
+    int tamanhoDoFrame = cavaleiro.width / qtdFramesDaImagem;
+    Rectangle movimentoFrame = {0.0f, 0.0f, (float)tamanhoDoFrame, (float)cavaleiro.height};
+
+    Vector2 posicaoCavaleiro = {larguraTela / 20.0f, posicaoCoordenadaY - cavaleiro.height};
+    Vector2 aceleracaoCavaleiro = {0.0f, 0.0f};
+
+    unsigned frameDelay = 5;
+    unsigned frameDelayCounter = 0;
+    unsigned frameIndex = 0;
+
+    while (!WindowShouldClose()) {
+        if (cavaleiroNoChao(&cavaleiro, &posicaoCavaleiro)) {
+            if (IsKeyDown(KEY_UP) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_UP)) {
+                aceleracaoCavaleiro.y = -2 * velocidadeCavaleiro;
+            }
+            if (IsKeyDown(KEY_RIGHT) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) {
+                aceleracaoCavaleiro.x = velocidadeCavaleiro;
+                if (movimentoFrame.width < 0) {
+                    movimentoFrame.width = -movimentoFrame.width;
+                }
+            } else if (IsKeyDown(KEY_LEFT) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT)) {
+                aceleracaoCavaleiro.x = -velocidadeCavaleiro;
+                if (movimentoFrame.width > 0) {
+                    movimentoFrame.width = -movimentoFrame.width;
+                }
+            } else {
+                aceleracaoCavaleiro.x = 0;
+            }
+        }
+
+        bool cavaleiroMovendo = aceleracaoCavaleiro.x != 0.0f || aceleracaoCavaleiro.y != 0.0f;
+
+        bool cavaleiroEstavaNoChao = cavaleiroNoChao(&cavaleiro, &posicaoCavaleiro);
+        posicaoCavaleiro = Vector2Add(posicaoCavaleiro, aceleracaoCavaleiro);
+        bool cavaleiroEstaNoChao = cavaleiroNoChao(&cavaleiro, &posicaoCavaleiro);
+        if (cavaleiroEstaNoChao) {
+            aceleracaoCavaleiro.y = 0;
+            posicaoCavaleiro.y = posicaoCoordenadaY - cavaleiro.height;
+        } else {
+            aceleracaoCavaleiro.y += gravidade;
+        }
+
+        ++frameDelayCounter;
+        if (frameDelayCounter > frameDelay) {
+            frameDelayCounter = 0;
+
+            if (cavaleiroMovendo) {
+                if (cavaleiroEstaNoChao) {
+                    ++frameIndex;
+                    frameIndex %= qtdFramesDaImagem;
+                } else {
+                    if (aceleracaoCavaleiro.y < 0) {
+                        frameIndex = puloFrameSuperior;
+                    } else {
+                        frameIndex = puloFrameInferior;
+                    }
+                }
+                movimentoFrame.x = frameIndex * tamanhoDoFrame;
+            }
+        }
+
+        BeginDrawing();
+            ClearBackground(RAYWHITE);
+            DrawTextureRec(cavaleiro, movimentoFrame, posicaoCavaleiro, WHITE);
+        EndDrawing();
+    }
+
+    return 0;
+}

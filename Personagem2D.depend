@@ -1,0 +1,19 @@
+# depslib dependency file v1.0
+1710827440 source:c:\raylib\raylib\projects\codeblocks\personagem2d\main.c
+	"raylib.h"
+	"raymath.h"
+	<stddef.h>
+	<stdlib.h>
+
+1700085250 c:\raylib\raylib\projects\codeblocks\personagem2d\raymath.h
+	<math.h>
+
+1716922836 source:f:\faculdade\3° período\extensão iii\personagem2d - 2\main.c
+	"raylib.h"
+	"raymath.h"
+	<stddef.h>
+	<stdlib.h>
+
+1700085250 f:\faculdade\3° período\extensão iii\personagem2d - 2\raymath.h
+	<math.h>
+

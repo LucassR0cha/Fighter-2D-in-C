@@ -1,0 +1,31 @@
+
+    /*Texture2D cavaleiro = LoadTexture("imagens/Ataque1.png");
+    float frameWidth = (float)(cavaleiro.width / 4);
+
+    int maxFrames = (int)(cavaleiro.width / (int)frameWidth);
+
+
+    float timer = 0.0f;
+    int frame = 0;
+
+
+    while(!WindowShouldClose())
+    {
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        timer += GetFrameTime();
+
+        if(timer >= 0.2f)
+        {
+            timer = 0.0f;
+            frame += 1;
+        }
+
+        frame = frame % maxFrames;
+
+        DrawTextureRec(cavaleiro, (Rectangle){(frameWidth * frame), 0, frameWidth, cavaleiro.height}, (Vector2){20, 20}, RAYWHITE);
+
+
+        EndDrawing();
+    }*/
