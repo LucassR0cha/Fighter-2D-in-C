@@ -7,7 +7,7 @@ const int larguraTela = 800;          // Define a largura da tela do jogo
 const int alturaTela = 400;           // Define a altura da tela do jogo
 
 const float velocidadeCavaleiro = 4.5;  // Define a velocidade de movimento do cavaleiro
-const float velocidadeGoblin = 3.0;     // Define a velocidade de movimento do goblin
+const float velocidadeGoblin = 1.5;     // Define a velocidade de movimento do goblin (ajustada para ser menor)
 const int gravidade = 1;              // Define a força da gravidade aplicada ao cavaleiro
 const int posicaoCoordenadaY = (2 * larguraTela) / 5;  // Define a posição Y onde o cavaleiro fica (cerca de 2/9 da largura da tela)
 
@@ -83,15 +83,21 @@ int main()
     Texture2D goblinParadoDir = LoadTexture(arquivoGoblinParadoDir);
     const char *arquivoGoblinParadoEsq = "imagens/goblin/goblinParadoEsq.png";
     Texture2D goblinParadoEsq = LoadTexture(arquivoGoblinParadoEsq);
-    const char *arquivoGoblinCorreDir = "imagens/goblin/goblinCorreDir.png";
+    const char *arquivoGoblinCorreDir = "imagens/goblin/goblinCorreEsq.png";
     Texture2D goblinCorreDir = LoadTexture(arquivoGoblinCorreDir);
-    const char *arquivoGoblinCorreEsq = "imagens/goblin/goblinCorreEsq.png";
+    const char *arquivoGoblinCorreEsq = "imagens/goblin/goblinCorreDir.png";
     Texture2D goblinCorreEsq = LoadTexture(arquivoGoblinCorreEsq);
+    const char *arquivoGoblinAtaqueDir = "imagens/goblin/ataqueGoblinDir.png";
+    Texture2D goblinAtaqueDir = LoadTexture(arquivoGoblinAtaqueDir);
+    const char *arquivoGoblinAtaqueEsq = "imagens/goblin/ataqueGoblinEsq.png";
+    Texture2D goblinAtaqueEsq = LoadTexture(arquivoGoblinAtaqueEsq);
 
     if (!imagemValida(&goblinParadoDir)) erroCarregarArquivo(arquivoGoblinParadoDir);
     if (!imagemValida(&goblinParadoEsq)) erroCarregarArquivo(arquivoGoblinParadoEsq);
     if (!imagemValida(&goblinCorreDir)) erroCarregarArquivo(arquivoGoblinCorreDir);
     if (!imagemValida(&goblinCorreEsq)) erroCarregarArquivo(arquivoGoblinCorreEsq);
+    if (!imagemValida(&goblinAtaqueDir)) erroCarregarArquivo(arquivoGoblinAtaqueDir);
+    if (!imagemValida(&goblinAtaqueEsq)) erroCarregarArquivo(arquivoGoblinAtaqueEsq);
 
     // Variáveis para o cavaleiro
     unsigned qtdFramesAndando = 10;
@@ -114,14 +120,16 @@ int main()
     // Variáveis para o goblin
     unsigned qtdFramesParadoGoblin = 4;
     unsigned qtdFramesCorrendoGoblin = 8;
+    unsigned qtdFramesAtaqueGoblin = 8;
     int tamanhoDoFrameParadoGoblin = goblinParadoDir.width / qtdFramesParadoGoblin;
     int tamanhoDoFrameCorrendoGoblin = goblinCorreDir.width / qtdFramesCorrendoGoblin;
+    int tamanhoDoFrameAtaqueGoblin = goblinAtaqueDir.width / qtdFramesAtaqueGoblin;
 
     Rectangle movimentoFrameGoblin = {0.0f, 0.0f, (float)tamanhoDoFrameParadoGoblin, (float)goblinParadoDir.height};
     Vector2 posicaoGoblin = {larguraTela * 4 / 5.0f, posicaoCavaleiro.y - 20.0f};
 
-
     bool goblinViradoParaDireita = false;
+    bool goblinAtacando = false;
 
     // Variável para a contagem regressiva
     int countdown = 180;
@@ -183,18 +191,27 @@ int main()
         // Atualização do goblin após a contagem regressiva
         if (countdown <= 0)
         {
-            if (posicaoGoblin.x < posicaoCavaleiro.x)
-            {
-                goblinViradoParaDireita = false;
-                posicaoGoblin.x += velocidadeGoblin;
-            }
-            else if (posicaoGoblin.x > posicaoCavaleiro.x)
-            {
-                goblinViradoParaDireita = true;
-                posicaoGoblin.x -= velocidadeGoblin;
-            }
+            float distanciaGoblinCavaleiro = Vector2Distance(posicaoGoblin, posicaoCavaleiro);
 
-            bool goblinMovendo = posicaoGoblin.x != larguraTela * 4 / 5.0f;
+            if (distanciaGoblinCavaleiro < 50.0f)
+            {
+                goblinAtacando = true;
+            }
+            else
+            {
+                goblinAtacando = false;
+
+                if (posicaoGoblin.x < posicaoCavaleiro.x)
+                {
+                    goblinViradoParaDireita = true;
+                    posicaoGoblin.x += velocidadeGoblin;
+                }
+                else if (posicaoGoblin.x > posicaoCavaleiro.x)
+                {
+                    goblinViradoParaDireita = false;
+                    posicaoGoblin.x -= velocidadeGoblin;
+                }
+            }
         }
 
         ++frameDelayCounter;
@@ -235,17 +252,21 @@ int main()
                 movimentoFrameCavaleiro.x = frameIndex * tamanhoDoFrameParado;
             }
 
-            if (countdown <= 0)
+            if (goblinAtacando)
+            {
+                frameIndex++;
+                if (frameIndex >= qtdFramesAtaqueGoblin)
+                {
+                    frameIndex = 0;
+                }
+                movimentoFrameGoblin.width = tamanhoDoFrameAtaqueGoblin;
+                movimentoFrameGoblin.x = frameIndex * tamanhoDoFrameAtaqueGoblin;
+            }
+            else
             {
                 frameIndex = (frameIndex + 1) % qtdFramesCorrendoGoblin;
                 movimentoFrameGoblin.width = tamanhoDoFrameCorrendoGoblin;
                 movimentoFrameGoblin.x = frameIndex * tamanhoDoFrameCorrendoGoblin;
-            }
-            else
-            {
-                frameIndex = (frameIndex + 1) % qtdFramesParadoGoblin;
-                movimentoFrameGoblin.width = tamanhoDoFrameParadoGoblin;
-                movimentoFrameGoblin.x = frameIndex * tamanhoDoFrameParadoGoblin;
             }
         }
 
@@ -290,13 +311,27 @@ int main()
         // Desenho do goblin
         if (countdown <= 0)
         {
-            if (goblinViradoParaDireita)
+            if (goblinAtacando)
             {
-                DrawTextureRec(goblinCorreDir, movimentoFrameGoblin, posicaoGoblin, WHITE);
+                if (goblinViradoParaDireita)
+                {
+                    DrawTextureRec(goblinAtaqueDir, movimentoFrameGoblin, posicaoGoblin, WHITE);
+                }
+                else
+                {
+                    DrawTextureRec(goblinAtaqueEsq, movimentoFrameGoblin, posicaoGoblin, WHITE);
+                }
             }
             else
             {
-                DrawTextureRec(goblinCorreEsq, movimentoFrameGoblin, posicaoGoblin, WHITE);
+                if (goblinViradoParaDireita)
+                {
+                    DrawTextureRec(goblinCorreDir, movimentoFrameGoblin, posicaoGoblin, WHITE);
+                }
+                else
+                {
+                    DrawTextureRec(goblinCorreEsq, movimentoFrameGoblin, posicaoGoblin, WHITE);
+                }
             }
         }
         else
@@ -328,6 +363,8 @@ int main()
     UnloadTexture(goblinParadoEsq);
     UnloadTexture(goblinCorreDir);
     UnloadTexture(goblinCorreEsq);
+    UnloadTexture(goblinAtaqueDir);
+    UnloadTexture(goblinAtaqueEsq);
 
     return 0;
 }
