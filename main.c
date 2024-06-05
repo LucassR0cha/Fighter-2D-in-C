@@ -50,6 +50,18 @@ void finalizar()
     CloseWindow();
 }
 
+// Função para desenhar a barra de HP
+void drawHpBar(Vector2 position, int hp, int maxHp, Color color)
+{
+    float barWidth = 200.0f;
+    float barHeight = 20.0f;
+    float hpPercentage = (float)hp / maxHp;
+
+    DrawRectangle(position.x, position.y, barWidth, barHeight, LIGHTGRAY);
+    DrawRectangle(position.x, position.y, barWidth * hpPercentage, barHeight, color);
+    DrawRectangleLines(position.x, position.y, barWidth, barHeight, BLACK);
+}
+
 // Função principal
 int main()
 {
@@ -116,6 +128,7 @@ int main()
     unsigned frameIndex = 0;
     bool viradoParaDireita = true;
     bool atacando = false;
+    bool movendo = false;
 
     // Variáveis para o goblin
     unsigned qtdFramesParadoGoblin = 4;
@@ -130,229 +143,183 @@ int main()
 
     bool goblinViradoParaDireita = false;
     bool goblinAtacando = false;
+    bool goblinMovendo = false;
 
-    // Variável para a contagem regressiva
-    int countdown = 180;
+    // Variáveis para HP
+    int hpCavaleiro = 100;
+    int maxHpCavaleiro = 100;
+    int hpGoblin = 100;
+    int maxHpGoblin = 100;
 
-    // Loop principal do jogo
     while (!WindowShouldClose())
     {
-        // Atualização do cavaleiro
-        if (personagemNoChao(&cavaleiroAndandoDir, &posicaoCavaleiro))
-        {
-            if (IsKeyPressed(KEY_A))
-            {
-                atacando = true;
-                frameIndex = 0;
-            }
+        movendo = false;  // Reseta o estado de movimento do cavaleiro
+        goblinMovendo = false;  // Reseta o estado de movimento do goblin
 
-            if (!atacando)
-            {
-                if (IsKeyDown(KEY_UP) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_UP))
-                {
-                    aceleracaoCavaleiro.y = -2 * velocidadeCavaleiro;
-                }
-                if (IsKeyDown(KEY_RIGHT) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT))
-                {
-                    aceleracaoCavaleiro.x = velocidadeCavaleiro;
-                    viradoParaDireita = true;
-                }
-                else if (IsKeyDown(KEY_LEFT) || IsGamepadButtonDown(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT))
-                {
-                    aceleracaoCavaleiro.x = -velocidadeCavaleiro;
-                    viradoParaDireita = false;
-                }
-                else
-                {
-                    aceleracaoCavaleiro.x = 0;
-                }
-            }
-            else
-            {
-                aceleracaoCavaleiro.x = 0;
-            }
+        // Atualiza o movimento do cavaleiro
+        if (IsKeyDown(KEY_RIGHT))
+        {
+            posicaoCavaleiro.x += velocidadeCavaleiro;
+            viradoParaDireita = true;
+            movendo = true;
+        }
+        else if (IsKeyDown(KEY_LEFT))
+        {
+            posicaoCavaleiro.x -= velocidadeCavaleiro;
+            viradoParaDireita = false;
+            movendo = true;
         }
 
-        bool cavaleiroMovendo = aceleracaoCavaleiro.x != 0.0f || aceleracaoCavaleiro.y != 0.0f;
-        bool cavaleiroEstavaNoChao = personagemNoChao(&cavaleiroAndandoDir, &posicaoCavaleiro);
-        posicaoCavaleiro = Vector2Add(posicaoCavaleiro, aceleracaoCavaleiro);
-        bool cavaleiroEstaNoChao = personagemNoChao(&cavaleiroAndandoDir, &posicaoCavaleiro);
-
-        if (cavaleiroEstaNoChao)
+        // Verifica se o cavaleiro está no chão para permitir pular
+        if (personagemNoChao(&cavaleiroAndandoDir, &posicaoCavaleiro))
         {
-            aceleracaoCavaleiro.y = 0;
-            posicaoCavaleiro.y = posicaoCoordenadaY - cavaleiroAndandoDir.height;
+            if (IsKeyDown(KEY_SPACE))
+            {
+                aceleracaoCavaleiro.y = -15.0f;
+            }
         }
         else
         {
             aceleracaoCavaleiro.y += gravidade;
         }
 
-        // Atualização do goblin após a contagem regressiva
-        if (countdown <= 0)
+        // Atualiza a posição vertical do cavaleiro
+        posicaoCavaleiro.y += aceleracaoCavaleiro.y;
+
+        // Ajusta a posição do cavaleiro para que ele não saia do chão
+        if (posicaoCavaleiro.y > posicaoCoordenadaY - cavaleiroAndandoDir.height)
         {
-            float distanciaGoblinCavaleiro = Vector2Distance(posicaoGoblin, posicaoCavaleiro);
-
-            if (distanciaGoblinCavaleiro < 50.0f)
-            {
-                goblinAtacando = true;
-            }
-            else
-            {
-                goblinAtacando = false;
-
-                if (posicaoGoblin.x < posicaoCavaleiro.x)
-                {
-                    goblinViradoParaDireita = true;
-                    posicaoGoblin.x += velocidadeGoblin;
-                }
-                else if (posicaoGoblin.x > posicaoCavaleiro.x)
-                {
-                    goblinViradoParaDireita = false;
-                    posicaoGoblin.x -= velocidadeGoblin;
-                }
-            }
+            posicaoCavaleiro.y = posicaoCoordenadaY - cavaleiroAndandoDir.height;
+            aceleracaoCavaleiro.y = 0;
         }
 
-        ++frameDelayCounter;
-        if (frameDelayCounter > frameDelay)
+        // Atualiza o estado de ataque do cavaleiro
+        atacando = IsKeyPressed(KEY_A);
+
+        // Atualiza a lógica de movimento do goblin
+        if (posicaoGoblin.x > posicaoCavaleiro.x + 10)
+        {
+            posicaoGoblin.x -= velocidadeGoblin;
+            goblinViradoParaDireita = false;
+            goblinMovendo = true;
+        }
+        else if (posicaoGoblin.x < posicaoCavaleiro.x - 10)
+        {
+            posicaoGoblin.x += velocidadeGoblin;
+            goblinViradoParaDireita = true;
+            goblinMovendo = true;
+        }
+
+        // Atualiza o frame de movimento do cavaleiro
+        if (++frameDelayCounter >= frameDelay)
         {
             frameDelayCounter = 0;
-
-            if (atacando)
+            frameIndex++;
+            if (movendo)
             {
-                frameIndex++;
-                if (frameIndex >= qtdFramesAtaque)
-                {
-                    frameIndex = 0;
-                    atacando = false;
-                }
-                movimentoFrameCavaleiro.width = tamanhoDoFrameAtaque;
-                movimentoFrameCavaleiro.x = frameIndex * tamanhoDoFrameAtaque;
+                if (frameIndex >= qtdFramesAndando) frameIndex = 0;
+                movimentoFrameCavaleiro.x = (float)frameIndex * tamanhoDoFrameAndando;
             }
-            else if (cavaleiroMovendo)
+            else if (atacando)
             {
-                if (cavaleiroEstaNoChao)
-                {
-                    frameIndex = (frameIndex + 1) % qtdFramesAndando;
-                    movimentoFrameCavaleiro.width = tamanhoDoFrameAndando;
-                    movimentoFrameCavaleiro.x = frameIndex * tamanhoDoFrameAndando;
-                }
-                else
-                {
-                    frameIndex = aceleracaoCavaleiro.y < 0 ? puloFrameSuperior : puloFrameInferior;
-                    movimentoFrameCavaleiro.width = tamanhoDoFrameAndando;
-                    movimentoFrameCavaleiro.x = frameIndex * tamanhoDoFrameAndando;
-                }
+                if (frameIndex >= qtdFramesAtaque) frameIndex = 0;
+                movimentoFrameCavaleiro.x = (float)frameIndex * tamanhoDoFrameAtaque;
             }
             else
             {
-                frameIndex = (frameIndex + 1) % qtdFramesParado;
-                movimentoFrameCavaleiro.width = tamanhoDoFrameParado;
-                movimentoFrameCavaleiro.x = frameIndex * tamanhoDoFrameParado;
+                if (frameIndex >= qtdFramesParado) frameIndex = 0;
+                movimentoFrameCavaleiro.x = (float)frameIndex * tamanhoDoFrameParado;
             }
 
-            if (goblinAtacando)
+            if (goblinMovendo)
             {
-                frameIndex++;
-                if (frameIndex >= qtdFramesAtaqueGoblin)
-                {
-                    frameIndex = 0;
-                }
-                movimentoFrameGoblin.width = tamanhoDoFrameAtaqueGoblin;
-                movimentoFrameGoblin.x = frameIndex * tamanhoDoFrameAtaqueGoblin;
+                if (frameIndex >= qtdFramesCorrendoGoblin) frameIndex = 0;
+                movimentoFrameGoblin.x = (float)frameIndex * tamanhoDoFrameCorrendoGoblin;
+            }
+            else if (goblinAtacando)
+            {
+                if (frameIndex >= qtdFramesAtaqueGoblin) frameIndex = 0;
+                movimentoFrameGoblin.x = (float)frameIndex * tamanhoDoFrameAtaqueGoblin;
             }
             else
             {
-                frameIndex = (frameIndex + 1) % qtdFramesCorrendoGoblin;
-                movimentoFrameGoblin.width = tamanhoDoFrameCorrendoGoblin;
-                movimentoFrameGoblin.x = frameIndex * tamanhoDoFrameCorrendoGoblin;
+                if (frameIndex >= qtdFramesParadoGoblin) frameIndex = 0;
+                movimentoFrameGoblin.x = (float)frameIndex * tamanhoDoFrameParadoGoblin;
             }
         }
 
+        // Lógica de ataque do cavaleiro
+        if (atacando && CheckCollisionRecs(
+                (Rectangle){posicaoCavaleiro.x, posicaoCavaleiro.y, tamanhoDoFrameAtaque, cavaleiroAtaqueDir.height},
+                (Rectangle){posicaoGoblin.x, posicaoGoblin.y, tamanhoDoFrameParadoGoblin, goblinParadoDir.height}))
+        {
+            hpGoblin -= 10;
+        }
+
+        // Lógica de ataque do goblin
+        goblinAtacando = CheckCollisionRecs(
+            (Rectangle){posicaoGoblin.x + (goblinViradoParaDireita ? -10 : 10), posicaoGoblin.y, tamanhoDoFrameAtaqueGoblin - 30, goblinAtaqueDir.height - 20},
+            (Rectangle){posicaoCavaleiro.x, posicaoCavaleiro.y, tamanhoDoFrameAndando, cavaleiroAndandoDir.height});
+
+        if (goblinAtacando)
+        {
+            hpCavaleiro -= 1;
+        }
+
+        // Desenho dos elementos na tela
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        // Desenho do cavaleiro
+        // Desenho da barra de HP do cavaleiro
+        drawHpBar((Vector2){20, 20}, hpCavaleiro, maxHpCavaleiro, RED);
+        DrawText("Cavaleiro", 20, 40, 20, BLACK);
+
+        // Desenho da barra de HP do goblin
+        drawHpBar((Vector2){larguraTela - 220, 20}, hpGoblin, maxHpGoblin, GREEN);
+        DrawText("Goblin", larguraTela - 220, 40, 20, BLACK);
+
+        // Desenha o cavaleiro na posição correta e na direção correta
+        Texture2D *texturaCavaleiro;
         if (atacando)
         {
-            if (viradoParaDireita)
-            {
-                DrawTextureRec(cavaleiroAtaqueDir, movimentoFrameCavaleiro, posicaoCavaleiro, WHITE);
-            }
-            else
-            {
-                DrawTextureRec(cavaleiroAtaqueEsq, movimentoFrameCavaleiro, posicaoCavaleiro, WHITE);
-            }
+            texturaCavaleiro = viradoParaDireita ? &cavaleiroAtaqueDir : &cavaleiroAtaqueEsq;
+            movimentoFrameCavaleiro.width = tamanhoDoFrameAtaque;
         }
-        else if (cavaleiroMovendo)
+        else if (movendo)
         {
-            if (viradoParaDireita)
-            {
-                DrawTextureRec(cavaleiroAndandoDir, movimentoFrameCavaleiro, posicaoCavaleiro, WHITE);
-            }
-            else
-            {
-                DrawTextureRec(cavaleiroAndandoEsq, movimentoFrameCavaleiro, posicaoCavaleiro, WHITE);
-            }
+            texturaCavaleiro = viradoParaDireita ? &cavaleiroAndandoDir : &cavaleiroAndandoEsq;
+            movimentoFrameCavaleiro.width = tamanhoDoFrameAndando;
         }
         else
         {
-            if (viradoParaDireita)
-            {
-                DrawTextureRec(cavaleiroParadoDir, movimentoFrameCavaleiro, posicaoCavaleiro, WHITE);
-            }
-            else
-            {
-                DrawTextureRec(cavaleiroParadoEsq, movimentoFrameCavaleiro, posicaoCavaleiro, WHITE);
-            }
+            texturaCavaleiro = viradoParaDireita ? &cavaleiroParadoDir : &cavaleiroParadoEsq;
+            movimentoFrameCavaleiro.width = tamanhoDoFrameParado;
         }
+        DrawTextureRec(*texturaCavaleiro, movimentoFrameCavaleiro, posicaoCavaleiro, WHITE);
 
-        // Desenho do goblin
-        if (countdown <= 0)
+        // Desenha o goblin na posição correta e na direção correta
+        Texture2D *texturaGoblin;
+        if (goblinAtacando)
         {
-            if (goblinAtacando)
-            {
-                if (goblinViradoParaDireita)
-                {
-                    DrawTextureRec(goblinAtaqueDir, movimentoFrameGoblin, posicaoGoblin, WHITE);
-                }
-                else
-                {
-                    DrawTextureRec(goblinAtaqueEsq, movimentoFrameGoblin, posicaoGoblin, WHITE);
-                }
-            }
-            else
-            {
-                if (goblinViradoParaDireita)
-                {
-                    DrawTextureRec(goblinCorreDir, movimentoFrameGoblin, posicaoGoblin, WHITE);
-                }
-                else
-                {
-                    DrawTextureRec(goblinCorreEsq, movimentoFrameGoblin, posicaoGoblin, WHITE);
-                }
-            }
+            texturaGoblin = goblinViradoParaDireita ? &goblinAtaqueDir : &goblinAtaqueEsq;
+            movimentoFrameGoblin.width = tamanhoDoFrameAtaqueGoblin;
+        }
+        else if (goblinMovendo)
+        {
+            texturaGoblin = goblinViradoParaDireita ? &goblinCorreDir : &goblinCorreEsq;
+            movimentoFrameGoblin.width = tamanhoDoFrameCorrendoGoblin;
         }
         else
         {
-            if (goblinViradoParaDireita)
-            {
-                DrawTextureRec(goblinParadoDir, movimentoFrameGoblin, posicaoGoblin, WHITE);
-            }
-            else
-            {
-                DrawTextureRec(goblinParadoEsq, movimentoFrameGoblin, posicaoGoblin, WHITE);
-            }
-
-            int countdownNumber = countdown / 60 + 1;
-            DrawText(TextFormat("%d", countdownNumber), larguraTela / 2 - 20, alturaTela / 2 - 20, 40, RED);
-            countdown--;
+            texturaGoblin = goblinViradoParaDireita ? &goblinParadoDir : &goblinParadoEsq;
+            movimentoFrameGoblin.width = tamanhoDoFrameParadoGoblin;
         }
+        DrawTextureRec(*texturaGoblin, movimentoFrameGoblin, posicaoGoblin, WHITE);
 
         EndDrawing();
     }
 
+    // Unload textures
     UnloadTexture(cavaleiroAndandoDir);
     UnloadTexture(cavaleiroAndandoEsq);
     UnloadTexture(cavaleiroParadoDir);
@@ -366,5 +333,6 @@ int main()
     UnloadTexture(goblinAtaqueDir);
     UnloadTexture(goblinAtaqueEsq);
 
+    CloseWindow();
     return 0;
 }
