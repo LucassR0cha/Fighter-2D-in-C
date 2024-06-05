@@ -20,13 +20,12 @@ bool personagemNoChao(Texture2D *personagem, Vector2 *posicaoPersonagem)
     return posicaoPersonagem->y + personagem->height >= posicaoCoordenadaY;
 }
 
-// Verifica se a imagem é válida
+// Verifica se as imagens são válidas
 bool imagemValida(const Texture2D *img)
 {
     return img->id > 0;
 }
 
-// Mostra uma mensagem de erro e encerra o programa
 void mostrarErroESair(const char *msgErro)
 {
     while (!WindowShouldClose())
@@ -278,7 +277,6 @@ int main()
         drawHpBar((Vector2){larguraTela - 220, 20}, hpGoblin, maxHpGoblin, GREEN);
         DrawText("Goblin", larguraTela - 220, 40, 20, BLACK);
 
-        // Desenha o cavaleiro na posição correta e na direção correta
         Texture2D *texturaCavaleiro;
         if (atacando)
         {
@@ -297,7 +295,6 @@ int main()
         }
         DrawTextureRec(*texturaCavaleiro, movimentoFrameCavaleiro, posicaoCavaleiro, WHITE);
 
-        // Desenha o goblin na posição correta e na direção correta
         Texture2D *texturaGoblin;
         if (goblinAtacando)
         {
@@ -319,7 +316,6 @@ int main()
         EndDrawing();
     }
 
-    // Unload textures
     UnloadTexture(cavaleiroAndandoDir);
     UnloadTexture(cavaleiroAndandoEsq);
     UnloadTexture(cavaleiroParadoDir);
