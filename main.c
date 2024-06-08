@@ -3,24 +3,22 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-const int larguraTela = 800;          // Define a largura da tela do jogo
-const int alturaTela = 400;           // Define a altura da tela do jogo
+const int larguraTela = 800;
+const int alturaTela = 400;
+const float velocidadeCavaleiro = 4.5;
+const float velocidadeGoblin = 1.5;
+const int gravidade = 1;
+const int posicaoCoordenadaY = (2 * larguraTela) / 5;
+const int puloFrameSuperior = 3;
+const int puloFrameInferior = 10;
 
-const float velocidadeCavaleiro = 4.5;  // Define a velocidade de movimento do cavaleiro
-const float velocidadeGoblin = 1.5;     // Define a velocidade de movimento do goblin (ajustada para ser menor)
-const int gravidade = 1;              // Define a for√ßa da gravidade aplicada ao cavaleiro
-const int posicaoCoordenadaY = (2 * larguraTela) / 5;  // Define a posi√ß√£o Y onde o cavaleiro fica (cerca de 2/9 da largura da tela)
-
-const int puloFrameSuperior = 3;      // Define o √≠ndice do frame quando o cavaleiro est√° no pulo superior
-const int puloFrameInferior = 10;     // Define o √≠ndice do frame quando o cavaleiro est√° no pulo inferior
-
-// Verifica se o cavaleiro est√° no ch√£o
+// Verifica se o cavaleiro est· no ch„o
 bool personagemNoChao(Texture2D *personagem, Vector2 *posicaoPersonagem)
 {
     return posicaoPersonagem->y + personagem->height >= posicaoCoordenadaY;
 }
 
-// Verifica se as imagens s√£o v√°lidas
+// Verifica se as imagens s„o v·lidas
 bool imagemValida(const Texture2D *img)
 {
     return img->id > 0;
@@ -38,10 +36,10 @@ void mostrarErroESair(const char *msgErro)
     exit(EXIT_FAILURE);
 }
 
-// Mostra uma mensagem de erro espec√≠fica para falha ao carregar um arquivo
+// Erro caso os arquivos ao sejam carregados corretamente
 void erroCarregarArquivo(const char *arquivo)
 {
-    mostrarErroESair(TextFormat("ERRO: N√ÉO FOI POSS√çVEL CARREGAR O ARQUIVO %s.", arquivo));
+    mostrarErroESair(TextFormat("ERRO: N√O FOI POSSÕVEL CARREGAR O ARQUIVO %s.", arquivo));
 }
 
 void finalizar()
@@ -49,7 +47,7 @@ void finalizar()
     CloseWindow();
 }
 
-// Fun√ß√£o para desenhar a barra de HP
+// FunÁ„o para desenhar a barra de HP
 void drawHpBar(Vector2 position, int hp, int maxHp, Color color)
 {
     float barWidth = 200.0f;
@@ -61,14 +59,13 @@ void drawHpBar(Vector2 position, int hp, int maxHp, Color color)
     DrawRectangleLines(position.x, position.y, barWidth, barHeight, BLACK);
 }
 
-// Fun√ß√£o principal
 int main()
 {
-    InitWindow(larguraTela, alturaTela, "Teste Personagem 2D");  // Inicializa a janela do jogo
-    SetTargetFPS(60);  // Define a taxa de quadros por segundo
-    atexit(finalizar);  // Chama a fun√ß√£o finalizar() na sa√≠da do programa
+    InitWindow(larguraTela, alturaTela, "Teste Personagem 2D");
+    SetTargetFPS(60);
+    atexit(finalizar);
 
-    // Carregamento das texturas do cavaleiro
+    // texturas cavaleiro
     const char *arquivoAndandoDir = "imagens/cavaleiro/andandoDir.png";
     Texture2D cavaleiroAndandoDir = LoadTexture(arquivoAndandoDir);
     const char *arquivoAndandoEsq = "imagens/cavaleiro/andandoEsq.png";
@@ -89,14 +86,14 @@ int main()
     if (!imagemValida(&cavaleiroAtaqueDir)) erroCarregarArquivo(arquivoAtaqueDir);
     if (!imagemValida(&cavaleiroAtaqueEsq)) erroCarregarArquivo(arquivoAtaqueEsq);
 
-    // Carregamento das texturas do goblin
+    // textura dos goblins
     const char *arquivoGoblinParadoDir = "imagens/goblin/goblinParadoDir.png";
     Texture2D goblinParadoDir = LoadTexture(arquivoGoblinParadoDir);
     const char *arquivoGoblinParadoEsq = "imagens/goblin/goblinParadoEsq.png";
     Texture2D goblinParadoEsq = LoadTexture(arquivoGoblinParadoEsq);
-    const char *arquivoGoblinCorreDir = "imagens/goblin/goblinCorreEsq.png";
+    const char *arquivoGoblinCorreDir = "imagens/goblin/goblinCorreDir.png";
     Texture2D goblinCorreDir = LoadTexture(arquivoGoblinCorreDir);
-    const char *arquivoGoblinCorreEsq = "imagens/goblin/goblinCorreDir.png";
+    const char *arquivoGoblinCorreEsq = "imagens/goblin/goblinCorreEsq.png";
     Texture2D goblinCorreEsq = LoadTexture(arquivoGoblinCorreEsq);
     const char *arquivoGoblinAtaqueDir = "imagens/goblin/ataqueGoblinDir.png";
     Texture2D goblinAtaqueDir = LoadTexture(arquivoGoblinAtaqueDir);
@@ -110,7 +107,12 @@ int main()
     if (!imagemValida(&goblinAtaqueDir)) erroCarregarArquivo(arquivoGoblinAtaqueDir);
     if (!imagemValida(&goblinAtaqueEsq)) erroCarregarArquivo(arquivoGoblinAtaqueEsq);
 
-    // Vari√°veis para o cavaleiro
+    // morte do goblin/ PS NAO ESTA FUNCIONANDO AINDA
+    const char *arquivoMorteGoblin = "imagens/goblin/morteGoblin.png";
+    Texture2D goblinMorte = LoadTexture(arquivoMorteGoblin);
+    if (!imagemValida(&goblinMorte)) erroCarregarArquivo(arquivoMorteGoblin);
+
+    // variaveis do cavaleiro
     unsigned qtdFramesAndando = 10;
     unsigned qtdFramesParado = 10;
     unsigned qtdFramesAtaque = 4;
@@ -119,6 +121,7 @@ int main()
     int tamanhoDoFrameAtaque = cavaleiroAtaqueDir.width / qtdFramesAtaque;
 
     Rectangle movimentoFrameCavaleiro = {0.0f, 0.0f, (float)tamanhoDoFrameAndando, (float)cavaleiroAndandoDir.height};
+    //posicao inical do cavaleiro
     Vector2 posicaoCavaleiro = {larguraTela / 20.0f, posicaoCoordenadaY - cavaleiroAndandoDir.height};
     Vector2 aceleracaoCavaleiro = {0.0f, 0.0f};
 
@@ -129,32 +132,57 @@ int main()
     bool atacando = false;
     bool movendo = false;
 
-    // Vari√°veis para o goblin
+    // Vari·veis para o goblin
     unsigned qtdFramesParadoGoblin = 4;
     unsigned qtdFramesCorrendoGoblin = 8;
     unsigned qtdFramesAtaqueGoblin = 8;
+    unsigned qtdFramesMorteGoblin = 4;
     int tamanhoDoFrameParadoGoblin = goblinParadoDir.width / qtdFramesParadoGoblin;
     int tamanhoDoFrameCorrendoGoblin = goblinCorreDir.width / qtdFramesCorrendoGoblin;
     int tamanhoDoFrameAtaqueGoblin = goblinAtaqueDir.width / qtdFramesAtaqueGoblin;
+    int tamanhoDoFrameMorteGoblin = goblinMorte.width / qtdFramesMorteGoblin;
 
     Rectangle movimentoFrameGoblin = {0.0f, 0.0f, (float)tamanhoDoFrameParadoGoblin, (float)goblinParadoDir.height};
+    //posicao inicial do goblin
     Vector2 posicaoGoblin = {larguraTela * 4 / 5.0f, posicaoCavaleiro.y - 20.0f};
 
+    //iniciando as variaveis de movimento, ataque e morte do goblin
     bool goblinViradoParaDireita = false;
     bool goblinAtacando = false;
     bool goblinMovendo = false;
+    bool goblinMorto = false;
 
-    // Vari√°veis para HP
-    int hpCavaleiro = 100;
-    int maxHpCavaleiro = 100;
+    // Vari·veis para HP
+    int hpCavaleiro = 400;
+    int maxHpCavaleiro = 400;
     int hpGoblin = 100;
     int maxHpGoblin = 100;
 
+    //Vari·veis para os nÌveis do personagem
+    const int expNiveis[10] = {5, 10, 15, 20, 25, 30, 35, 40, 45, 50};
+    int nivelCavaleiro = 1;
+    int expCavaleiro = 0;
+
+
+    //Aqui comeÁa o loop principal da logica do jogo
     while (!WindowShouldClose())
     {
-        movendo = false;  // Reseta o estado de movimento do cavaleiro
-        goblinMovendo = false;  // Reseta o estado de movimento do goblin
+        movendo = false;
+        goblinMovendo = false;
 
+
+        for (int i = nivelCavaleiro - 1; i < 10; i++)
+        {
+            if (expCavaleiro >= expNiveis[i])
+            {
+                nivelCavaleiro++;
+                expCavaleiro -= expNiveis[i]; // Remove a experiÍncia necess·ria para passar de nÌvel
+            }
+            else
+            {
+                break; // Para o loop se o cavaleiro n„o tiver experiÍncia suficiente para o prÛximo nÌvel
+            }
+        }
         // Atualiza o movimento do cavaleiro
         if (IsKeyDown(KEY_RIGHT))
         {
@@ -169,12 +197,12 @@ int main()
             movendo = true;
         }
 
-        // Verifica se o cavaleiro est√° no ch√£o para permitir pular
+        // Verifica se o cavaleiro est· no ch„o para permitir pular
         if (personagemNoChao(&cavaleiroAndandoDir, &posicaoCavaleiro))
         {
             if (IsKeyDown(KEY_SPACE))
             {
-                aceleracaoCavaleiro.y = -15.0f;
+                aceleracaoCavaleiro.y = -12.0f;
             }
         }
         else
@@ -182,10 +210,10 @@ int main()
             aceleracaoCavaleiro.y += gravidade;
         }
 
-        // Atualiza a posi√ß√£o vertical do cavaleiro
+        // Atualiza a posiÁ„o vertical do cavaleiro
         posicaoCavaleiro.y += aceleracaoCavaleiro.y;
 
-        // Ajusta a posi√ß√£o do cavaleiro para que ele n√£o saia do ch√£o
+        // Ajusta a posiÁ„o do cavaleiro para que ele n„o saia do ch„o
         if (posicaoCavaleiro.y > posicaoCoordenadaY - cavaleiroAndandoDir.height)
         {
             posicaoCavaleiro.y = posicaoCoordenadaY - cavaleiroAndandoDir.height;
@@ -195,18 +223,75 @@ int main()
         // Atualiza o estado de ataque do cavaleiro
         atacando = IsKeyPressed(KEY_A);
 
-        // Atualiza a l√≥gica de movimento do goblin
-        if (posicaoGoblin.x > posicaoCavaleiro.x + 10)
+        // LÛgica de ataque do cavaleiro
+        if (atacando && CheckCollisionRecs((Rectangle)
+    {
+        posicaoCavaleiro.x, posicaoCavaleiro.y, tamanhoDoFrameAtaque, cavaleiroAtaqueDir.height
+    }, (Rectangle)
+    {
+        posicaoGoblin.x, posicaoGoblin.y, tamanhoDoFrameParadoGoblin, goblinParadoDir.height
+    }))
         {
-            posicaoGoblin.x -= velocidadeGoblin;
-            goblinViradoParaDireita = false;
-            goblinMovendo = true;
+            hpGoblin -= 10;
         }
-        else if (posicaoGoblin.x < posicaoCavaleiro.x - 10)
+
+        // LÛgica de ataque do goblin
+        goblinAtacando = CheckCollisionRecs((Rectangle)
         {
-            posicaoGoblin.x += velocidadeGoblin;
-            goblinViradoParaDireita = true;
-            goblinMovendo = true;
+            posicaoGoblin.x + (goblinViradoParaDireita ? -10 : 10), posicaoGoblin.y, tamanhoDoFrameAtaqueGoblin - 150, goblinAtaqueDir.height - 20
+        }, (Rectangle)
+        {
+            posicaoCavaleiro.x - 80, posicaoCavaleiro.y, tamanhoDoFrameAndando, cavaleiroAndandoDir.height
+        });
+        if (goblinAtacando)
+        {
+            hpCavaleiro -= 1;
+        }
+
+        // Verifica se o goblin morreu
+        if (hpGoblin <= 0 && !goblinMorto)
+        {
+            goblinMorto = true;
+            frameIndex = 0;
+            expCavaleiro += 5;
+        }
+
+        // Atualiza a animaÁ„o de morte do goblin se ele estiver morto PS: NAO ESTA FUNCIONANDO AINDA
+        if (goblinMorto)
+        {
+            // Atualiza o frame de morte do goblin
+            if (++frameDelayCounter >= frameDelay)
+            {
+                frameDelayCounter = 0;
+                frameIndex++;
+                if (frameIndex >= qtdFramesMorteGoblin)
+                {
+                    // Se a animaÁ„o de morte acabou, reinicie a batalha com um novo goblin
+                    goblinMorto = false;
+                    hpGoblin = maxHpGoblin; // Restaura a vida do novo goblin
+                    posicaoGoblin = (Vector2)
+                    {
+                        larguraTela * 4 / 5.0f, posicaoCavaleiro.y - 20.0f
+                    }; // Posiciona o novo goblin
+                }
+                movimentoFrameGoblin.x = (float)frameIndex * tamanhoDoFrameMorteGoblin;
+            }
+        }
+        else
+        {
+            // Atualiza a lÛgica de movimento do goblin
+            if (posicaoGoblin.x > posicaoCavaleiro.x + 10)
+            {
+                posicaoGoblin.x -= velocidadeGoblin;
+                goblinViradoParaDireita = false;
+                goblinMovendo = true;
+            }
+            else if (posicaoGoblin.x < posicaoCavaleiro.x - 10)
+            {
+                posicaoGoblin.x += velocidadeGoblin;
+                goblinViradoParaDireita = true;
+                goblinMovendo = true;
+            }
         }
 
         // Atualiza o frame de movimento do cavaleiro
@@ -247,35 +332,54 @@ int main()
             }
         }
 
-        // L√≥gica de ataque do cavaleiro
+        //Colis„o do ataque do cavaleiro
         if (atacando && CheckCollisionRecs(
-                (Rectangle){posicaoCavaleiro.x, posicaoCavaleiro.y, tamanhoDoFrameAtaque, cavaleiroAtaqueDir.height},
-                (Rectangle){posicaoGoblin.x, posicaoGoblin.y, tamanhoDoFrameParadoGoblin, goblinParadoDir.height}))
+                    (Rectangle)
+    {
+        posicaoCavaleiro.x + (viradoParaDireita ? tamanhoDoFrameAndando - 30 : 0), posicaoCavaleiro.y, 30, cavaleiroAtaqueDir.height
+        },
+        (Rectangle)
         {
-            hpGoblin -= 10;
-        }
+            posicaoGoblin.x, posicaoGoblin.y, tamanhoDoFrameParadoGoblin, goblinParadoDir.height
+        }))
+        hpGoblin -= 10;
 
-        // L√≥gica de ataque do goblin
+        // LÛgica de ataque do goblin
         goblinAtacando = CheckCollisionRecs(
-            (Rectangle){posicaoGoblin.x + (goblinViradoParaDireita ? -10 : 10), posicaoGoblin.y, tamanhoDoFrameAtaqueGoblin - 30, goblinAtaqueDir.height - 20},
-            (Rectangle){posicaoCavaleiro.x, posicaoCavaleiro.y, tamanhoDoFrameAndando, cavaleiroAndandoDir.height});
-
-        if (goblinAtacando)
+                             (Rectangle)
         {
+            posicaoGoblin.x + (goblinViradoParaDireita ? -10 : 10), posicaoGoblin.y, 10, goblinAtaqueDir.height - 20
+        },
+        (Rectangle)
+        {
+            posicaoCavaleiro.x - 40, posicaoCavaleiro.y, tamanhoDoFrameAndando, cavaleiroAndandoDir.height
+        });
+        if (goblinAtacando)
             hpCavaleiro -= 1;
-        }
 
-        // Desenho dos elementos na tela
+
+        //ComeÁa a desenhar os elementos na tela
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        // Desenho da barra de HP do cavaleiro
-        drawHpBar((Vector2){20, 20}, hpCavaleiro, maxHpCavaleiro, RED);
-        DrawText("Cavaleiro", 20, 40, 20, BLACK);
+        // Barra de HP do cavaleiro
+        drawHpBar((Vector2)
+        {
+            20, 20
+        }, hpCavaleiro, maxHpCavaleiro, RED);
+        DrawText(TextFormat("Cavaleiro: %i/%i", hpCavaleiro, maxHpCavaleiro), 22, 30, 10, BLACK);
 
-        // Desenho da barra de HP do goblin
-        drawHpBar((Vector2){larguraTela - 220, 20}, hpGoblin, maxHpGoblin, GREEN);
-        DrawText("Goblin", larguraTela - 220, 40, 20, BLACK);
+        DrawRectangleLines(20, 50, 200, 10, BLACK);
+        float nivelPercentage = (float)expCavaleiro / expNiveis[nivelCavaleiro - 1];
+        DrawRectangle(20, 50, 200 * nivelPercentage, 10, BLUE);
+        DrawText(TextFormat("Nivel %i", nivelCavaleiro), 22, 40, 5, BLACK);
+
+        // Barra de HP do goblin
+        drawHpBar((Vector2)
+        {
+            larguraTela - 220, 20
+        }, hpGoblin, maxHpGoblin, GREEN);
+        DrawText(TextFormat("Goblin: %i/%i", hpGoblin, maxHpGoblin), 705, 30, 10, BLACK);
 
         Texture2D *texturaCavaleiro;
         if (atacando)
@@ -316,6 +420,7 @@ int main()
         EndDrawing();
     }
 
+    //Descarregando as texturas ( È como se fosse um FREE sÛ que nas texturas dos sprites)
     UnloadTexture(cavaleiroAndandoDir);
     UnloadTexture(cavaleiroAndandoEsq);
     UnloadTexture(cavaleiroParadoDir);
@@ -330,5 +435,7 @@ int main()
     UnloadTexture(goblinAtaqueEsq);
 
     CloseWindow();
+
     return 0;
 }
+
